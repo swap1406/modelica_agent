@@ -1,0 +1,32 @@
+# ── Secrets: never commit these ──────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ── Python clutter ───────────────────────────────────────────
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# ── Simulation outputs (large, regenerated on every run) ─────
+results/
+*.mat
+*_res.csv
+*.log
+# OpenModelica build by-products
+*.c
+*.o
+*.h
+*.libs
+*.makefile
+*_init.xml
+*_info.json
+
+# ── Editor and OS files ──────────────────────────────────────
+.DS_Store
+.vscode/
+.idea/
