@@ -1,0 +1,12 @@
+# Docker setup for the project.
+# Usage (from the project folder):
+#   docker compose run --rm om omc --version
+#   docker compose run --rm om omc scripts/smoke_test.mos
+services:
+  om:
+    # Pinned OpenModelica version: change deliberately, never "latest".
+    image: openmodelica/openmodelica:v1.27.1-ompython
+    # The project folder on the Mac appears as /work inside the container.
+    volumes:
+      - ./:/work
+    working_dir: /work

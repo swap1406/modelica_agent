@@ -1,0 +1,7 @@
+// Smoke test: load HelloEV, simulate 300 s, write results/HelloEV_res.csv
+// Run from the project folder with:
+//   docker compose run --rm om omc scripts/smoke_test.mos
+mkdir("results");
+cd("results");
+loadFile("../models/HelloEV.mo"); getErrorString();
+simulate(HelloEV, stopTime = 300, numberOfIntervals = 300, outputFormat = "csv", fileNamePrefix = "HelloEV"); getErrorString();
