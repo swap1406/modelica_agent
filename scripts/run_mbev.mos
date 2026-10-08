@@ -1,0 +1,20 @@
+// Run MBEV (EHPT examples, Ceraolo) on its own, so every message belongs to this model.
+// MBEV: EV with battery (state of charge) on the NEDC cycle. 1400 s.
+// Run from the project folder:
+//   docker compose run --rm om omc scripts/run_mbev.mos 2>&1 | tee results/MBEV/console.txt
+
+// 1. Libraries: Modelica Standard Library (4.x, cached in .om-home) + pinned EHPT submodules
+installPackage(Modelica, "4.0.0+maint.om", exactMatch=false); getErrorString();
+loadModel(Modelica, {"4.0.0"}); getErrorString();
+loadFile("third_party/EHPTlib/EHPTlib/package.mo"); getErrorString();
+loadFile("third_party/EHPTexamples/EHPTexamples/package.mo"); getErrorString();
+
+// 2. Extra detail on how OpenModelica repairs the start conditions
+//    (which values it adds or drops). Remove this line once understood.
+setCommandLineOptions("-d=initialization"); getErrorString();
+
+// 3. Own output folder, so build files and logs don't mix with other models
+mkdir("results/MBEV"); cd("results/MBEV");
+
+// 4. Simulate
+simulate(EHPTexamples.EV.MBEV, outputFormat="csv", fileNamePrefix="MBEV"); getErrorString();

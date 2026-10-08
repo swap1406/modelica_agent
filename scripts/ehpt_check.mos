@@ -1,0 +1,22 @@
+// Batch check: run ALL EHPT models in one go (quick regression check once they work).
+// For debugging a single model, use run_firstev.mos / run_mbev.mos instead.
+// Prerequisite: git submodules in third_party/ (see README).
+// Run from the project folder:
+//   docker compose run --rm om omc scripts/ehpt_check.mos
+
+// 1. Modelica Standard Library 4.0.0, required by EHPT (downloaded once, then cached)
+installPackage(Modelica, "4.0.0+maint.om", exactMatch=false); getErrorString();
+loadModel(Modelica, {"4.0.0"}); getErrorString();
+
+// 2. EHPT libraries from the pinned submodules
+loadFile("third_party/EHPTlib/EHPTlib/package.mo"); getErrorString();
+loadFile("third_party/EHPTexamples/EHPTexamples/package.mo"); getErrorString();
+
+// 3. Simulate in results/, keeping build clutter there (git-ignored)
+mkdir("results"); cd("results");
+
+// FirstEV: speed tracking on NEDC, no battery (200 s)
+simulate(EHPTexamples.EV.FirstEV, outputFormat="csv", fileNamePrefix="FirstEV", simflags="-jacobian=coloredNumerical"); getErrorString();
+
+// MBEV: EV with battery and state of charge on NEDC (1400 s). Failed in Jan 2026 on 1.26.0.
+simulate(EHPTexamples.EV.MBEV, outputFormat="csv", fileNamePrefix="MBEV"); getErrorString();

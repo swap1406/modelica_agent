@@ -30,3 +30,6 @@ results/
 .DS_Store
 .vscode/
 .idea/
+
+# ── OpenModelica library cache (downloaded on first run) ──
+.om-home/
