@@ -1,0 +1,6 @@
+[submodule "third_party/EHPTlib"]
+	path = third_party/EHPTlib
+	url = https://github.com/ceraolo/EHPTlib.git
+[submodule "third_party/EHPTexamples"]
+	path = third_party/EHPTexamples
+	url = https://github.com/ceraolo/EHPTexamples.git

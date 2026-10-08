@@ -1,0 +1,19 @@
+// Run FirstEV (EHPT examples, Ceraolo) on its own, so every message belongs to this model.
+// FirstEV: simple EV following the NEDC cycle, no battery. 200 s.
+// Run from the project folder:
+//   docker compose run --rm om omc scripts/run_firstev.mos 2>&1 | tee results/FirstEV/console.txt
+
+// 1. Libraries: Modelica Standard Library (4.x, cached in .om-home) + pinned EHPT submodules
+installPackage(Modelica, "4.0.0+maint.om", exactMatch=false); getErrorString();
+loadModel(Modelica, {"4.0.0"}); getErrorString();
+loadFile("third_party/EHPTlib/EHPTlib/package.mo"); getErrorString();
+loadFile("third_party/EHPTexamples/EHPTexamples/package.mo"); getErrorString();
+
+// 2. Own output folder, so build files and logs don't mix with other models
+mkdir("results/FirstEV"); cd("results/FirstEV");
+
+// 3. Simulate.
+// The model file sets an empty "-jacobian" flag, which OpenModelica 1.27.1 rejects.
+// We override it here with a valid option instead of editing the pinned library.
+simulate(EHPTexamples.EV.FirstEV, outputFormat="csv", fileNamePrefix="FirstEV",
+         simflags="-jacobian=coloredNumerical"); getErrorString();

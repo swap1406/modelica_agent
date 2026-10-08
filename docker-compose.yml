@@ -10,3 +10,7 @@ services:
     volumes:
       - ./:/work
     working_dir: /work
+    # Keep OpenModelica's downloaded libraries (e.g. the Modelica Standard
+    # Library) between runs, inside the project but git-ignored.
+    environment:
+      HOME: /work/.om-home
