@@ -7,12 +7,13 @@
     docker compose run --rm om python3 -m simcore run EHPTexamples.EV.FirstEV --simflags "-jacobian=coloredNumerical"
     docker compose run --rm om python3 -m simcore signals latest:MBEV --search soc
     docker compose run --rm om python3 -m simcore read latest:MBEV velSens.v batt1.SOC
+    docker compose run --rm om python3 -m simcore plot latest:MBEV velSens.v driver.accelTau driver.brakeTau batt1.SOC
 """
 
 import argparse
 import sys
 
-from simcore import environment_info, list_signals, read_results, run_simulation
+from simcore import environment_info, list_signals, plot_signals, read_results, run_simulation
 
 
 def main() -> int:
@@ -37,7 +38,19 @@ def main() -> int:
     p_read.add_argument("run", help='run id, "latest" or "latest:<Model>"')
     p_read.add_argument("signals", nargs="+", help="signal names, e.g. velSens.v batt1.SOC")
 
+    p_plot = sub.add_parser("plot", help="interactive chart (HTML) of chosen signals of a run")
+    p_plot.add_argument("run", help='run id, "latest" or "latest:<Model>"')
+    p_plot.add_argument("signals", nargs="+", help="signal names, e.g. velSens.v batt1.SOC")
+    p_plot.add_argument("--title", default=None, help="chart title")
+
     args = parser.parse_args()
+
+    if args.command == "plot":
+        path = plot_signals(args.run, args.signals, title=args.title)
+        on_mac = str(path).replace("/work/", "", 1)   # same file, as seen from the project folder on the Mac
+        print(f"Chart saved: {on_mac}")
+        print(f"Open it with:  open {on_mac}")
+        return 0
 
     if args.command == "signals":
         found = list_signals(args.run, search=args.search, include_derivatives=args.all)
