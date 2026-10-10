@@ -1,16 +1,24 @@
 # Docker setup for the project.
+# First time (and after changing docker/Dockerfile):
+#   docker compose build
 # Usage (from the project folder):
 #   docker compose run --rm om omc --version
 #   docker compose run --rm om omc scripts/smoke_test.mos
+#   docker compose run --rm om python3 -m simcore
 services:
   om:
-    # Pinned OpenModelica version: change deliberately, never "latest".
-    image: openmodelica/openmodelica:v1.27.1-ompython
+    # Our own image: pinned OpenModelica + pinned Python packages (see docker/Dockerfile).
+    build:
+      context: docker
+      dockerfile: Dockerfile
+    image: simcore-om:1.27.1
     # The project folder on the Mac appears as /work inside the container.
     volumes:
       - ./:/work
     working_dir: /work
-    # Keep OpenModelica's downloaded libraries (e.g. the Modelica Standard
-    # Library) between runs, inside the project but git-ignored.
     environment:
+      # Keep OpenModelica's downloaded libraries (e.g. the Modelica Standard
+      # Library) between runs, inside the project but git-ignored.
       HOME: /work/.om-home
+      # Lets Python find our package in src/ without installing it.
+      PYTHONPATH: /work/src
