@@ -5,6 +5,7 @@ Each run produces a folder like  results/runs/20261010-153012_MBEV/  containing:
     console.txt    everything OpenModelica printed
     <Model>_res.csv   the simulation results (if the run succeeded)
     <Model>.log    the simulation log
+    <Model>_init.xml  OpenModelica's list of all variables with descriptions and units
     run.json       the run record: model, settings, status, messages, timings, versions
     build/         OpenModelica's intermediate files (generated C code, compiled program).
                    Deleted after a successful run unless keep_build=True; always kept
@@ -171,6 +172,9 @@ def run_simulation(model: str, stop_time: float | None = None, simflags: str | N
         shutil.move(str(result_csv), kept_csv)
     if log_file.exists():
         shutil.move(str(log_file), run_dir / log_file.name)
+    init_xml = build_dir / f"{short_name}_init.xml"   # variable descriptions + units
+    if init_xml.exists():
+        shutil.copy2(init_xml, run_dir / init_xml.name)
 
     # 4. Decide success: a results file AND the log confirms the simulation finished
     errors, warnings, notifications = _sort_messages(output)
