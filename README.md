@@ -1,4 +1,4 @@
-# modelica-agent
+# modelica_agent
 
 **Chat with your digital twin.**
 
@@ -32,8 +32,8 @@ Virtual validation involves many repetitive steps: choose a model, set up a driv
 **Prerequisites:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) and Git. Works natively on Apple Silicon and on x86.
 
 ```bash
-git clone --recurse-submodules https://github.com/swap1406/modelica-agent.git
-cd modelica-agent
+git clone --recurse-submodules https://github.com/swap1406/modelica_agent.git
+cd modelica_agent
 docker compose build                       # once: OpenModelica 1.27.1 + Python tools
 ```
 
@@ -101,7 +101,7 @@ docker compose run --rm om python3 -m pytest -v
 - **Modelica Standard Library** 4.x, installed by OpenModelica's package manager.
 - **HelloEV:** a minimal 1-D vehicle written for this project to verify the toolchain.
 
-modelica-agent is an independent project. It is not affiliated with or endorsed by the Modelica Association or the Open Source Modelica Consortium.
+modelica_agent is an independent project. It is not affiliated with or endorsed by the Modelica Association or the Open Source Modelica Consortium.
 
 ## Ground rules
 
