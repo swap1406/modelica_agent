@@ -1,6 +1,8 @@
-# Chat with your EV digital twin
+# modelica-agent
 
-An AI assistant that lets simulation engineers run and analyse electric-vehicle models in plain language.
+**Chat with your digital twin.**
+
+An AI assistant that lets simulation engineers run and analyse Modelica models in plain language. The first use case is an electric vehicle.
 
 > *"Run the NEDC cycle for the EV model, then plot battery state of charge."*
 
@@ -30,8 +32,8 @@ Virtual validation involves many repetitive steps: choose a model, set up a driv
 **Prerequisites:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) and Git. Works natively on Apple Silicon and on x86.
 
 ```bash
-git clone --recurse-submodules https://github.com/swap1406/OpenModelica_Study.git
-cd OpenModelica_Study
+git clone --recurse-submodules https://github.com/swap1406/modelica-agent.git
+cd modelica-agent
 docker compose build                       # once: OpenModelica 1.27.1 + Python tools
 ```
 
@@ -98,6 +100,8 @@ docker compose run --rm om python3 -m pytest -v
 - **EV models:** [EHPTlib](https://github.com/ceraolo/EHPTlib) (BSD-3) and [EHPTexamples](https://github.com/ceraolo/EHPTexamples) by Prof. Massimo Ceraolo, University of Pisa. They are referenced as pinned Git submodules, not copied.
 - **Modelica Standard Library** 4.x, installed by OpenModelica's package manager.
 - **HelloEV:** a minimal 1-D vehicle written for this project to verify the toolchain.
+
+modelica-agent is an independent project. It is not affiliated with or endorsed by the Modelica Association or the Open Source Modelica Consortium.
 
 ## Ground rules
 
