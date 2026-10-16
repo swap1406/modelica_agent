@@ -17,3 +17,6 @@ RUN (python3 -m pip --version || (apt-get update \
 #   plotly  - interactive charts (zoom, hover) saved as HTML
 #   pytest  - automated tests
 RUN python3 -m pip install "pandas==2.2.3" "plotly==5.24.1" "pytest==8.3.4"
+
+# MCP server SDK (Milestone 2): lets AI assistants call simcore as tools.
+RUN python3 -m pip install "mcp==1.27.1"
