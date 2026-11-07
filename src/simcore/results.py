@@ -1,7 +1,10 @@
 """Read simulation results from a run folder.
 
+    list_runs(model, limit)        recent runs, newest first
     list_signals(run, search)      which signals exist, with description and unit
     read_results(run, signals)     a table (pandas DataFrame) with time + chosen signals
+    summarize_signals(run, signals, at_time)
+                                   start/end/min/max of signals (compact, for AI tools)
 
 `run` can be:
     "latest"                       the most recent successful run
@@ -150,3 +153,81 @@ def read_results(run="latest", signals: list[str] | None = None) -> pd.DataFrame
 
     data = pd.read_csv(csv, usecols=columns)[columns]
     return data.drop_duplicates(subset="time", keep="last").reset_index(drop=True)
+
+
+# ── Listing runs ──────────────────────────────────────────────────────────────
+
+def list_runs(model: str | None = None, limit: int = 10) -> list[dict]:
+    """Recent runs, newest first, optionally only one model (short or full name)."""
+    runs = []
+    for folder in sorted(config.RUNS_DIR.glob("*"), reverse=True):
+        record = _read_record(folder)
+        if not record:
+            continue
+        if model and model not in (record["model"], record["model"].split(".")[-1]):
+            continue
+        runs.append({
+            "run_id": record["run_id"],
+            "model": record["model"].split(".")[-1],
+            "status": record["status"],
+            "started_at": record.get("started_at", ""),
+            "duration_s": record.get("duration_s"),
+            "stop_time_s": record.get("stop_time"),
+            "errors": len(record.get("errors", [])),
+        })
+        if len(runs) >= limit:
+            break
+    return runs
+
+
+# ── Compact summaries ─────────────────────────────────────────────────────────
+
+def _num(x) -> float:
+    """Round to 6 significant digits so summaries stay short and readable."""
+    return float(f"{float(x):.6g}")
+
+
+def summarize_signals(run="latest", signals: list[str] | None = None,
+                      at_time: float | None = None) -> dict:
+    """Start, end, min and max (with their times) of each requested signal.
+
+    With at_time, also the value at that time (linear interpolation). Returns a
+    small dictionary instead of the full time series, so it suits AI assistants.
+    """
+    if not signals:
+        raise ValueError("Give at least one signal name (use list_signals to find names).")
+    folder = find_run(run)
+    data = read_results(str(folder), signals)
+    info = _signal_info(folder)
+    record = _read_record(folder) or {}
+    t = data["time"]
+    t0, t1 = float(t.iloc[0]), float(t.iloc[-1])
+    if at_time is not None and not (t0 <= at_time <= t1):
+        raise ValueError(f"at_time={at_time} s is outside this run (time goes from {t0:g} to {t1:g} s).")
+
+    out = {
+        "run_id": folder.name,
+        "model": record.get("model", "").split(".")[-1],
+        "time_range_s": [_num(t0), _num(t1)],
+        "signals": [],
+    }
+    for name in signals:
+        y = data[name]
+        description, unit, _ = info.get(name, ("", "", ""))
+        entry = {
+            "name": name,
+            "description": description,
+            "unit": unit,
+            "start": _num(y.iloc[0]),
+            "end": _num(y.iloc[-1]),
+            "min": _num(y.min()),
+            "time_of_min_s": _num(t[y.idxmin()]),
+            "max": _num(y.max()),
+            "time_of_max_s": _num(t[y.idxmax()]),
+        }
+        if at_time is not None:
+            import numpy as np
+            entry["at_time_s"] = _num(at_time)
+            entry["value_at_time"] = _num(np.interp(at_time, t, y))
+        out["signals"].append(entry)
+    return out

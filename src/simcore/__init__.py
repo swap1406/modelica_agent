@@ -9,5 +9,7 @@ __version__ = "0.1.0"
 
 from simcore.environment import environment_info  # noqa: E402,F401
 from simcore.run import RunResult, run_simulation  # noqa: E402,F401
-from simcore.results import Signal, find_run, list_signals, read_results  # noqa: E402,F401
+from simcore.results import (Signal, find_run, list_runs, list_signals,  # noqa: E402,F401
+                             read_results, summarize_signals)
+from simcore.catalog import MODELS, get_model  # noqa: E402,F401
 from simcore.plotting import plot_signals  # noqa: E402,F401
