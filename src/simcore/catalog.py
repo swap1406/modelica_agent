@@ -13,23 +13,23 @@ MODELS = {
         "model": "EHPTexamples.EV.MBEV",
         "description": (
             "Simple map-based battery electric vehicle (open-source EHPT library, "
-            "Prof. M. Ceraolo) driving the NEDC drive cycle. The 1180 s NEDC repeats "
-            "periodically; a standard run is 1400 s. Includes a battery with state of "
-            "charge, a power-limited electric drive, and driver torque requests."
+            "Prof. M. Ceraolo): 1300 kg, single fixed gear, 150 N.m / 25 kW electric "
+            "drive, battery starting at 70 % SOC. Drives the NEDC; a standard run is "
+            "exactly one NEDC (1180 s). Runs longer than 1180 s repeat the cycle."
         ),
-        "drive_cycle": "NEDC (repeating)",
-        "default_stop_time_s": 1400,
+        "drive_cycle": "NEDC (one cycle = 1180 s; repeats if run longer)",
+        "default_stop_time_s": 1180,
         "simflags": None,
         "key_signals": {
-            "velSens.v": "vehicle speed [m/s]",
-            "batt1.SOC": "battery state of charge, fraction 0-1 (0.70 = 70 %)",
-            "driver.accelTau": "drive torque request from the driver model [N.m]",
-            "driver.brakeTau": "brake torque request from the driver model [N.m], negative when braking",
+            "velSens.v": "vehicle speed",
+            "batt1.SOC": "battery state of charge",
+            "enBatDel": "battery energy used",
+            "mass.s": "distance travelled",
         },
-        "notes": (
-            "Each run logs an 'Initialization problem is structural singular' error "
-            "that OpenModelica repairs automatically; the run still succeeds."
-        ),
+        "notes": "Use the signal glossary (list_signals) for engineering terms such as motor torque or battery current.",
+        "known_messages": {
+            "structural singular": "Known and harmless: OpenModelica repairs this start-up problem automatically; results are valid.",
+        },
     },
     "FirstEV": {
         "model": "EHPTexamples.EV.FirstEV",
@@ -46,6 +46,7 @@ MODELS = {
             "velSens.v": "vehicle speed [m/s]",
         },
         "notes": "Needs the solver flag -jacobian=coloredNumerical on OpenModelica 1.27.1 (applied automatically).",
+        "known_messages": {},
     },
     "HelloEV": {
         "model": "HelloEV",
@@ -64,6 +65,7 @@ MODELS = {
             "x": "distance travelled [m]",
         },
         "notes": None,
+        "known_messages": {},
     },
 }
 
@@ -106,3 +108,16 @@ def run_model(name: str, stop_time: float | None = None):
         except (KeyError, ValueError):
             summary = None   # a key signal is missing: the run still counts, just no summary
     return result, summary, entry
+
+
+def classify_messages(entry: dict, errors: list[str]) -> tuple[list[str], list[dict]]:
+    """Split error messages into real errors and known, harmless ones (with an explanation)."""
+    real, known = [], []
+    for e in errors:
+        label = next((why for pattern, why in entry.get("known_messages", {}).items()
+                      if pattern.lower() in e.lower()), None)
+        if label:
+            known.append({"message": e.splitlines()[0][:200], "explanation": label})
+        else:
+            real.append(e)
+    return real, known

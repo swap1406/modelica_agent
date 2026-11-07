@@ -1,0 +1,30 @@
+{
+  "model": "HelloEV",
+  "approved_by": "Swapnil Zanwar, 7 Nov 2026",
+  "checked_against": "",
+  "entries": [
+    {
+      "term": "vehicle speed",
+      "synonyms": [
+        "speed",
+        "velocity"
+      ],
+      "signal": "v",
+      "unit": "m/s",
+      "display_unit": "km/h",
+      "meaning": "Vehicle speed.",
+      "check": "approaches 33.7 m/s"
+    },
+    {
+      "term": "distance",
+      "synonyms": [
+        "distance travelled"
+      ],
+      "signal": "x",
+      "unit": "m",
+      "display_unit": "km",
+      "meaning": "Distance travelled.",
+      "check": ""
+    }
+  ]
+}
