@@ -15,12 +15,18 @@ Tool design rules (see the Milestone 2 plan):
   - errors say what to do next (e.g. "Did you mean batt1.SOC?")
 """
 
+import json
 import logging
 import sys
 
-from mcp.server.fastmcp import FastMCP, Image
+import base64
+from pathlib import Path
+
+from mcp.server.fastmcp import FastMCP
+from mcp.types import CallToolResult, ImageContent, TextContent
 
 from simcore import catalog, config, plotting, results
+from simcore.plot_data import chart_data
 from simcore.plot_png import plot_signals_png
 from simcore.environment import environment_info as _environment_info
 
@@ -37,8 +43,8 @@ Tools for running and analysing OpenModelica simulation models (modelica_agent).
 - Only start a new simulation (run_simulation) when the user asks for one or no
   suitable run exists; otherwise read existing runs. run_simulation already
   returns a summary of the key signals, so you often don't need read_results.
-- plot_signals shows the chart as an image in the chat and also saves an
-  interactive HTML version; mention its path so the user can open it.
+- plot_signals shows an interactive chart in the chat (where supported) and
+  gives you an image of it to look at; describe what it shows if helpful.
 - Report numbers only from tool results, convert units when the user asks
   (m/s x 3.6 = km/h; SOC fraction x 100 = %), and always mention the run id.
 - If a request is ambiguous (which model? which signal?), say what you assumed or ask.
@@ -167,16 +173,34 @@ def run_simulation(model: str, stop_time: float | None = None) -> dict:
     return out
 
 
-@mcp.tool(structured_output=False)
-def plot_signals(signals: list[str], run: str = "latest", title: str | None = None) -> list:
+# ── In-chat interactive chart (MCP App) ───────────────────────────────────────
+# An MCP App is a ui:// resource holding an HTML page, linked to a tool through
+# _meta.ui.resourceUri. Hosts that support MCP Apps (e.g. Claude Desktop) show the
+# page as a panel in the chat and send it the tool result's structuredContent.
+APP_MIME = "text/html;profile=mcp-app"
+PLOT_UI = "ui://modelica_agent/plot.html"
+PLOT_HTML = (Path(__file__).parent / "ui" / "plot_view.html").read_text()
+
+
+@mcp.resource(PLOT_UI, name="plot_view", mime_type=APP_MIME,
+              meta={"ui": {"csp": {"resourceDomains": ["https://unpkg.com"]}}})
+def plot_view() -> str:
+    """Interactive chart page used by plot_signals."""
+    return PLOT_HTML
+
+
+@mcp.tool(meta={"ui": {"resourceUri": PLOT_UI}, "ui/resourceUri": PLOT_UI})
+def plot_signals(signals: list[str], run: str = "latest", title: str | None = None) -> CallToolResult:
     """Plot one or more signals from a run, e.g. signals=["velSens.v", "batt1.SOC"],
-    run="latest:MBEV". Returns the chart as an image shown in the chat (you can
-    look at it to describe trends), plus the path of an interactive HTML version
-    (zoom, hover, linked cursor) inside the project folder. Signals with the same
-    unit share a panel; up to 8 signals. Use exact names from list_signals."""
+    run="latest:MBEV". Shows an interactive chart in the chat (zoom, hover, linked
+    cursor across panels) and returns an image you can look at to describe
+    trends, plus the path of an interactive HTML file in the project folder.
+    Signals with the same unit share a panel; up to 8 signals. Use exact names
+    from list_signals."""
     log.info("tool: plot_signals run=%s signals=%s", run, signals)
     try:
         folder = results.find_run(run)
+        data = chart_data(str(folder), signals, title=title)
         png = plot_signals_png(str(folder), signals, title=title)
         html = plotting.plot_signals(str(folder), signals, title=title)
     except (KeyError, FileNotFoundError, ValueError) as exc:
@@ -186,10 +210,17 @@ def plot_signals(signals: list[str], run: str = "latest", title: str | None = No
         "signals": signals,
         "image": str(png.relative_to(config.PROJECT_ROOT)),
         "interactive_chart": str(html.relative_to(config.PROJECT_ROOT)),
-        "how_to_open": "The image is shown in the chat. For zoom and hover, open the "
-                       "interactive_chart file from the project folder in a web browser.",
+        "note": "An interactive chart is shown in the chat where supported; the HTML file "
+                "can also be opened from the project folder in a web browser.",
     }
-    return [Image(path=png), info]
+    return CallToolResult(
+        content=[
+            ImageContent(type="image", mimeType="image/png",
+                         data=base64.b64encode(png.read_bytes()).decode()),
+            TextContent(type="text", text=json.dumps(info)),
+        ],
+        structuredContent=data,
+    )
 
 
 def main() -> None:
