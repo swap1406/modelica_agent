@@ -22,3 +22,6 @@ LIBRARY_FILES = [
 
 # Our own models: every .mo file in this folder is loaded too (e.g. HelloEV).
 MODELS_DIR = PROJECT_ROOT / "models"
+
+# Signal glossaries (one JSON file per model): engineering terms → signals.
+GLOSSARY_DIR = PROJECT_ROOT / "glossaries"

@@ -25,7 +25,7 @@ from pathlib import Path
 from mcp.server.fastmcp import FastMCP
 from mcp.types import CallToolResult, ImageContent, TextContent
 
-from simcore import catalog, config, plotting, results
+from simcore import catalog, config, glossary, plotting, results
 from simcore.plot_data import chart_data
 from simcore.plot_png import plot_signals_png
 from simcore.environment import environment_info as _environment_info
@@ -45,8 +45,11 @@ Tools for running and analysing OpenModelica simulation models (modelica_agent).
   returns a summary of the key signals, so you often don't need read_results.
 - plot_signals shows an interactive chart in the chat (where supported) and
   gives you an image of it to look at; describe what it shows if helpful.
-- Report numbers only from tool results, convert units when the user asks
-  (m/s x 3.6 = km/h; SOC fraction x 100 = %), and always mention the run id.
+- Engineers ask in engineering terms ("motor torque", "battery current"): use
+  list_signals with that term and prefer the "recommended" glossary signals.
+- Report numbers only from tool results. Results include a "display" block in
+  readable units (km/h, %, kWh, kW, rpm) where available: use it. Mention the run id.
+- Messages listed as known_harmless_messages are not problems; say so briefly.
 - If a request is ambiguous (which model? which signal?), say what you assumed or ask.
 """
 
@@ -89,7 +92,7 @@ def list_models() -> list[dict]:
             "description": entry["description"],
             "drive_cycle": entry["drive_cycle"],
             "standard_run_length_s": entry["default_stop_time_s"],
-            "key_signals": entry["key_signals"],
+            "signal_glossary": [f"{g['term']} → {g['signal']} ({g['unit']})" for g in glossary.entries(name)],
             "notes": entry["notes"],
             "latest_successful_run": latest_ok,
         })
@@ -108,22 +111,28 @@ def list_runs(model: str | None = None, limit: int = 10) -> list[dict]:
 
 @mcp.tool()
 def list_signals(run: str = "latest", search: str | None = None) -> dict:
-    """Find signals (variables) stored in a run's results, with description and
-    unit. Use a keyword to narrow the list, e.g. search="SOC", "speed", "torque",
-    "batt". run can be a run id from list_runs, or "latest:<model>" such as
-    "latest:MBEV". Use this to get the exact signal name before read_results."""
+    """Find signals (variables) in a run's results. Search with an engineering
+    term, e.g. search="motor torque", "battery current", "SOC", "speed". Verified
+    glossary matches are listed first under "recommended" with their meaning and
+    sign convention: prefer those. run can be a run id from list_runs, or
+    "latest:<model>" such as "latest:MBEV". Use this to get the exact signal name
+    before read_results or plot_signals."""
     log.info("tool: list_signals run=%s search=%s", run, search)
     try:
         folder = results.find_run(run)
         found = results.list_signals(run, search=search)
+        model = (results._read_record(folder) or {}).get("model", "")
     except (KeyError, FileNotFoundError) as exc:
         raise _clean_error(exc)
-    out = {
-        "run_id": folder.name,
-        "matches": len(found),
-        "signals": [{"name": s.name, "description": s.description, "unit": s.unit}
-                    for s in found[:MAX_SIGNALS_LISTED]],
-    }
+    # Verified glossary entries first: they map engineering terms to the right signal.
+    glossary_hits = glossary.find(model, search) if search else []
+    out = {"run_id": folder.name}
+    if glossary_hits:
+        out["recommended"] = [{"term": g["term"], "signal": g["signal"], "unit": g["unit"],
+                               "meaning": g["meaning"]} for g in glossary_hits]
+    out["matches"] = len(found)
+    out["signals"] = [{"name": s.name, "description": s.description, "unit": s.unit}
+                      for s in found[:MAX_SIGNALS_LISTED]]
     if len(found) > MAX_SIGNALS_LISTED:
         out["note"] = f"Showing the first {MAX_SIGNALS_LISTED}; use a more specific search."
     return out
@@ -156,13 +165,15 @@ def run_simulation(model: str, stop_time: float | None = None) -> dict:
         result, summary, entry = catalog.run_model(model, stop_time=stop_time)
     except (KeyError, ValueError) as exc:
         raise _clean_error(exc)
+    real_errors, known = catalog.classify_messages(entry, result.errors)
     out = {
         "run_id": result.run_id,
         "model": entry["name"],
         "status": result.status,
         "stop_time_s": result.stop_time,
         "duration_s": result.duration_s,
-        "errors": [e.splitlines()[0][:200] for e in result.errors[:5]],
+        "errors": [e.splitlines()[0][:200] for e in real_errors[:5]],
+        "known_harmless_messages": known,
         "warnings_count": len(result.warnings),
         "model_notes": entry["notes"],
     }

@@ -1,0 +1,214 @@
+{
+  "model": "MBEV",
+  "approved_by": "Swapnil Zanwar, 7 Nov 2026",
+  "checked_against": "run 20261107-105840_MBEV",
+  "entries": [
+    {
+      "term": "vehicle speed",
+      "synonyms": [
+        "speed",
+        "velocity",
+        "actual speed"
+      ],
+      "signal": "velSens.v",
+      "unit": "m/s",
+      "display_unit": "km/h",
+      "meaning": "Actual vehicle speed.",
+      "check": "max 32.39 m/s = 116.6 km/h"
+    },
+    {
+      "term": "target speed",
+      "synonyms": [
+        "cycle speed",
+        "reference speed",
+        "demanded speed",
+        "drive cycle"
+      ],
+      "signal": "driver.from_kmh.y",
+      "unit": "m/s",
+      "display_unit": "km/h",
+      "meaning": "Speed demanded by the NEDC drive cycle.",
+      "check": "max 33.33 m/s = 120 km/h"
+    },
+    {
+      "term": "acceleration",
+      "synonyms": [
+        "deceleration"
+      ],
+      "signal": "mass.a",
+      "unit": "m/s2",
+      "display_unit": null,
+      "meaning": "Vehicle acceleration; negative when slowing down.",
+      "check": "-1.37 to +0.99 m/s2"
+    },
+    {
+      "term": "distance",
+      "synonyms": [
+        "distance travelled",
+        "odometer",
+        "position"
+      ],
+      "signal": "mass.s",
+      "unit": "m",
+      "display_unit": "km",
+      "meaning": "Distance travelled since the start.",
+      "check": "10.74 km at 1180 s"
+    },
+    {
+      "term": "battery SOC",
+      "synonyms": [
+        "SOC",
+        "state of charge",
+        "battery charge"
+      ],
+      "signal": "batt1.SOC",
+      "unit": "1",
+      "display_unit": "%",
+      "meaning": "State of charge as a fraction: 0.70 = 70 %.",
+      "check": "70.0 % to 66.9 %"
+    },
+    {
+      "term": "battery voltage",
+      "synonyms": [
+        "pack voltage",
+        "terminal voltage",
+        "DC voltage"
+      ],
+      "signal": "batt1.uBat",
+      "unit": "V",
+      "display_unit": null,
+      "meaning": "Battery terminal voltage.",
+      "check": "384.5 to 389.6 V"
+    },
+    {
+      "term": "battery current",
+      "synonyms": [
+        "pack current",
+        "discharge current",
+        "charge current",
+        "regen current"
+      ],
+      "signal": "batt1.n.i",
+      "unit": "A",
+      "display_unit": null,
+      "meaning": "Battery current: positive = discharging, negative = charging (regenerative braking).",
+      "check": "+64.9 A while accelerating, -35.7 A while braking"
+    },
+    {
+      "term": "battery power",
+      "synonyms": [
+        "DC power",
+        "electrical power",
+        "power from battery"
+      ],
+      "signal": "eleDrive.pDC.pSensor.power",
+      "unit": "W",
+      "display_unit": "kW",
+      "meaning": "Electrical power drawn from the battery: positive = discharging, negative = regenerating. Capped at 25 kW.",
+      "check": "max 25 kW = 385 V x 64.9 A"
+    },
+    {
+      "term": "motor torque",
+      "synonyms": [
+        "actual torque",
+        "electric drive torque",
+        "e-machine torque"
+      ],
+      "signal": "eleDrive.tauElectrical",
+      "unit": "N.m",
+      "display_unit": null,
+      "meaning": "Actual electric motor torque after limits (max 150 N.m). Not the driver's request.",
+      "check": "-150 to 142.5 N.m"
+    },
+    {
+      "term": "torque request",
+      "synonyms": [
+        "torque demand",
+        "driver torque",
+        "requested torque"
+      ],
+      "signal": "driver.tauRef",
+      "unit": "N.m",
+      "display_unit": null,
+      "meaning": "Torque requested by the driver model before limiting; split into driver.accelTau (>= 0) and driver.brakeTau (<= 0).",
+      "check": "-165.8 to 219.9 N.m"
+    },
+    {
+      "term": "motor speed",
+      "synonyms": [
+        "motor rpm",
+        "shaft speed",
+        "e-machine speed"
+      ],
+      "signal": "eleDrive.wMechanical",
+      "unit": "rad/s",
+      "display_unit": "rpm",
+      "meaning": "Motor shaft speed.",
+      "check": "max 340 rad/s = 3247 rpm"
+    },
+    {
+      "term": "motor power",
+      "synonyms": [
+        "mechanical power",
+        "traction power",
+        "drive power"
+      ],
+      "signal": "eleDrive.powSensor.power",
+      "unit": "W",
+      "display_unit": "kW",
+      "meaning": "Mechanical power at the motor shaft: positive = driving, negative = regenerating.",
+      "check": "-17.8 to +22.0 kW"
+    },
+    {
+      "term": "battery energy used",
+      "synonyms": [
+        "energy consumption",
+        "energy used",
+        "energy from battery"
+      ],
+      "signal": "enBatDel",
+      "unit": "J",
+      "display_unit": "kWh",
+      "meaning": "Net energy delivered by the battery since the start (regeneration subtracts). Energy per km = this / distance.",
+      "check": "1.093 kWh over 10.74 km = 101.7 Wh/km (one NEDC)"
+    },
+    {
+      "term": "braking energy",
+      "synonyms": [
+        "energy at the brakes",
+        "regen energy",
+        "braking losses"
+      ],
+      "signal": "enBraking",
+      "unit": "J",
+      "display_unit": "kWh",
+      "meaning": "Mechanical energy removed from the vehicle while braking.",
+      "check": "0.315 kWh over 1400 s"
+    },
+    {
+      "term": "battery losses",
+      "synonyms": [
+        "battery loss energy",
+        "internal losses"
+      ],
+      "signal": "enBattLoss",
+      "unit": "J",
+      "display_unit": "kWh",
+      "meaning": "Energy lost inside the battery (internal resistance).",
+      "check": "0.048 kWh over 1400 s"
+    },
+    {
+      "term": "drag force",
+      "synonyms": [
+        "road load",
+        "resistance force",
+        "aero drag"
+      ],
+      "signal": "dragF.f",
+      "unit": "N",
+      "display_unit": null,
+      "meaning": "Aerodynamic plus rolling resistance force.",
+      "check": "max 546 N"
+    }
+  ]
+}

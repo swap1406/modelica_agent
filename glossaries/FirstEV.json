@@ -1,0 +1,19 @@
+{
+  "model": "FirstEV",
+  "approved_by": "Swapnil Zanwar, 7 Nov 2026",
+  "checked_against": "",
+  "entries": [
+    {
+      "term": "vehicle speed",
+      "synonyms": [
+        "speed",
+        "velocity"
+      ],
+      "signal": "velSens.v",
+      "unit": "m/s",
+      "display_unit": "km/h",
+      "meaning": "Vehicle speed.",
+      "check": ""
+    }
+  ]
+}

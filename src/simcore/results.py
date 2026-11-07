@@ -225,9 +225,22 @@ def summarize_signals(run="latest", signals: list[str] | None = None,
             "max": _num(y.max()),
             "time_of_max_s": _num(t[y.idxmax()]),
         }
+        # Readable units: glossary preference first, otherwise the default for the unit
+        from simcore import glossary, units
+        g = glossary.for_signal(out["model"], name)
+        if g:
+            entry["meaning"] = g["meaning"]
+            if not unit:                       # model declares no unit (e.g. HelloEV): use the glossary's
+                unit = entry["unit"] = g["unit"]
+        shown = units.display_unit(unit, g.get("display_unit") if g else None)
+        if shown:
+            entry["display"] = {"unit": shown,
+                                **{k: _num(units.convert(entry[k], unit, shown)) for k in ("start", "end", "min", "max")}}
         if at_time is not None:
             import numpy as np
             entry["at_time_s"] = _num(at_time)
             entry["value_at_time"] = _num(np.interp(at_time, t, y))
+            if "display" in entry:
+                entry["display"]["value_at_time"] = _num(units.convert(entry["value_at_time"], unit, shown))
         out["signals"].append(entry)
     return out
