@@ -18,9 +18,10 @@ Tool design rules (see the Milestone 2 plan):
 import logging
 import sys
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import FastMCP, Image
 
-from simcore import catalog, results
+from simcore import catalog, config, plotting, results
+from simcore.plot_png import plot_signals_png
 from simcore.environment import environment_info as _environment_info
 
 logging.basicConfig(stream=sys.stderr, level=logging.INFO, format="%(levelname)s %(message)s")
@@ -33,6 +34,11 @@ Tools for running and analysing OpenModelica simulation models (modelica_agent).
 - To answer questions about results, find a run with list_runs, find exact signal
   names with list_signals, then get values with read_results.
 - Use run ids like "latest:MBEV" rather than "latest", so you read the right model.
+- Only start a new simulation (run_simulation) when the user asks for one or no
+  suitable run exists; otherwise read existing runs. run_simulation already
+  returns a summary of the key signals, so you often don't need read_results.
+- plot_signals shows the chart as an image in the chat and also saves an
+  interactive HTML version; mention its path so the user can open it.
 - Report numbers only from tool results, convert units when the user asks
   (m/s x 3.6 = km/h; SOC fraction x 100 = %), and always mention the run id.
 - If a request is ambiguous (which model? which signal?), say what you assumed or ask.
@@ -129,6 +135,61 @@ def read_results(signals: list[str], run: str = "latest", at_time: float | None 
         return results.summarize_signals(run, signals, at_time=at_time)
     except (KeyError, FileNotFoundError, ValueError) as exc:
         raise _clean_error(exc)
+
+
+@mcp.tool()
+def run_simulation(model: str, stop_time: float | None = None) -> dict:
+    """Run a simulation of a catalogue model (see list_models), e.g. model="MBEV".
+    Uses the model's standard run length unless stop_time (seconds) is given.
+    Takes from a few seconds to about a minute. Returns the new run id, status,
+    any errors, model notes (e.g. known harmless messages) and a summary of the
+    model's key signals (start, end, min, max), such as final battery SOC and
+    top speed. Creates a new run each time; only use it when a new run is wanted."""
+    log.info("tool: run_simulation model=%s stop_time=%s", model, stop_time)
+    try:
+        result, summary, entry = catalog.run_model(model, stop_time=stop_time)
+    except (KeyError, ValueError) as exc:
+        raise _clean_error(exc)
+    out = {
+        "run_id": result.run_id,
+        "model": entry["name"],
+        "status": result.status,
+        "stop_time_s": result.stop_time,
+        "duration_s": result.duration_s,
+        "errors": [e.splitlines()[0][:200] for e in result.errors[:5]],
+        "warnings_count": len(result.warnings),
+        "model_notes": entry["notes"],
+    }
+    if summary:
+        out["key_signal_summary"] = summary["signals"]
+    if result.status != "success":
+        out["next_step"] = "The run failed. Report the errors; console.txt in the run folder has details."
+    return out
+
+
+@mcp.tool(structured_output=False)
+def plot_signals(signals: list[str], run: str = "latest", title: str | None = None) -> list:
+    """Plot one or more signals from a run, e.g. signals=["velSens.v", "batt1.SOC"],
+    run="latest:MBEV". Returns the chart as an image shown in the chat (you can
+    look at it to describe trends), plus the path of an interactive HTML version
+    (zoom, hover, linked cursor) inside the project folder. Signals with the same
+    unit share a panel; up to 8 signals. Use exact names from list_signals."""
+    log.info("tool: plot_signals run=%s signals=%s", run, signals)
+    try:
+        folder = results.find_run(run)
+        png = plot_signals_png(str(folder), signals, title=title)
+        html = plotting.plot_signals(str(folder), signals, title=title)
+    except (KeyError, FileNotFoundError, ValueError) as exc:
+        raise _clean_error(exc)
+    info = {
+        "run_id": folder.name,
+        "signals": signals,
+        "image": str(png.relative_to(config.PROJECT_ROOT)),
+        "interactive_chart": str(html.relative_to(config.PROJECT_ROOT)),
+        "how_to_open": "The image is shown in the chat. For zoom and hover, open the "
+                       "interactive_chart file from the project folder in a web browser.",
+    }
+    return [Image(path=png), info]
 
 
 def main() -> None:

@@ -74,3 +74,35 @@ def get_model(name: str) -> dict:
         if name.lower() in (short.lower(), entry["model"].lower()):
             return {"name": short, **entry}
     raise KeyError(f"Unknown model '{name}'. Available models: {', '.join(MODELS)}.")
+
+
+# ── Running a catalogue model ─────────────────────────────────────────────────
+
+MAX_STOP_TIME_S = 20000   # guardrail: no runaway simulations started by mistake
+
+
+def run_model(name: str, stop_time: float | None = None):
+    """Run a catalogue model by its short name, with its standard settings.
+
+    Uses the catalogue's standard run length (unless stop_time is given) and any
+    known solver flags, so callers never need full Modelica names or flags.
+    Returns (RunResult, summary of the key signals or None, catalogue entry).
+    """
+    from simcore.results import summarize_signals
+    from simcore.run import run_simulation
+
+    entry = get_model(name)
+    if stop_time is None:
+        stop_time = entry["default_stop_time_s"]
+    if not (0 < stop_time <= MAX_STOP_TIME_S):
+        raise ValueError(f"stop_time must be between 0 and {MAX_STOP_TIME_S} s (got {stop_time}). "
+                         f"The standard run for {entry['name']} is {entry['default_stop_time_s']} s.")
+
+    result = run_simulation(entry["model"], stop_time=stop_time, simflags=entry["simflags"])
+    summary = None
+    if result.status == "success" and entry["key_signals"]:
+        try:
+            summary = summarize_signals(result, list(entry["key_signals"]))
+        except (KeyError, ValueError):
+            summary = None   # a key signal is missing: the run still counts, just no summary
+    return result, summary, entry
