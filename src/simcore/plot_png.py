@@ -36,7 +36,7 @@ def plot_signals_png(run="latest", signals: list[str] | None = None, title: str 
     model = (_read_record(folder) or {}).get("model", "").split(".")[-1]
 
     fig, axes = plt.subplots(len(panels), 1, sharex=True, squeeze=False,
-                             figsize=(10, 2.4 * len(panels) + 0.8), dpi=100)
+                             figsize=(10, 2.4 * len(panels) + 0.8), dpi=80)
     for ax, panel in zip(axes[:, 0], panels):
         for s in panel:
             ax.plot(data["time"], data[s], color=COLOURS[signals.index(s)], linewidth=1.4, label=s)

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<!-- In-chat interactive chart for modelica_agent (an MCP App).
+     The AI app (e.g. Claude Desktop) shows this page in a sandboxed frame and
+     sends it the plot_signals tool result. Drawing: uPlot (small and fast);
+     talking to the host: the official MCP Apps client (ext-apps). -->
+<html><head><meta charset="utf-8"><meta name="color-scheme" content="light dark"><title>Chart</title>
+<link rel="stylesheet" href="https://unpkg.com/uplot@1.6.31/dist/uPlot.min.css">
+<style>
+  body { font: 13px system-ui, sans-serif; margin: 0; padding: 10px; }
+  h3 { margin: 0 0 6px; font-size: 14px; font-weight: 600; }
+  .panel { margin-bottom: 6px; }
+  .note { opacity: .65; font-size: 11px; margin-top: 4px; }
+  .u-legend { font-size: 12px; }
+  .bar { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 8px; }
+  .bar button { font: 12px system-ui, sans-serif; padding: 3px 10px; border-radius: 6px;
+                border: 1px solid #8886; background: transparent; color: inherit; cursor: pointer; }
+  .bar button:hover { border-color: #2a78d6; }
+</style></head>
+<body>
+<div id="title">Waiting for chart data…</div>
+<div class="bar" id="bar" hidden>
+  <button id="zin" title="Zoom in">＋ Zoom in</button>
+  <button id="zout" title="Zoom out">－ Zoom out</button>
+  <button id="left" title="Move earlier">◀</button>
+  <button id="right" title="Move later">▶</button>
+  <button id="reset" title="Show the whole run">Reset</button>
+</div>
+<div id="charts"></div>
+<div class="note" id="note"></div>
+<script type="module">
+  import uPlot from "https://unpkg.com/uplot@1.6.31/dist/uPlot.esm.js";
+  import { App } from "https://unpkg.com/@modelcontextprotocol/ext-apps@1.7.5/dist/src/app-with-deps.js";
+
+  const app = new App({ name: "modelica_agent chart", version: "0.2.0" });
+  let plots = [], syncing = false, last = null;
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const fmt = (v) => (v == null ? "–" : Math.abs(v) >= 1000 || Math.abs(v) < 0.01 ? v.toPrecision(4) : v.toFixed(3));
+
+  function draw(d) {
+    last = d;
+    plots.forEach((p) => p.destroy());
+    plots = [];
+    const box = document.getElementById("charts");
+    box.innerHTML = "";
+    document.getElementById("title").innerHTML = `<h3>${esc(d.title)}</h3>`;
+    const fg = getComputedStyle(document.body).color;
+    const width = Math.max(320, (box.clientWidth || document.body.clientWidth) - 4);
+
+    d.panels.forEach((p, i) => {
+      const div = document.createElement("div");
+      div.className = "panel";
+      box.appendChild(div);
+      const opts = {
+        width, height: 170,
+        cursor: { sync: { key: "x" }, drag: { x: true, y: false } },   // linked cursor across panels
+        scales: { x: { time: false } },
+        axes: [
+          { stroke: fg, grid: { stroke: "#8883" }, label: i === d.panels.length - 1 ? "time (s)" : "" },
+          { stroke: fg, grid: { stroke: "#8883" }, label: p.unit || "(no unit)" },
+        ],
+        series: [
+          { label: "t (s)", value: (u, v) => (v == null ? "–" : v.toFixed(1)) },
+          ...p.series.map((s) => ({ label: s.name, stroke: s.color, width: 1.6, value: (u, v) => fmt(v) })),
+        ],
+        hooks: {
+          // zoom one panel → zoom all panels to the same time range
+          setScale: [(u, key) => {
+            if (key !== "x" || syncing) return;
+            syncing = true;
+            plots.forEach((o) => o !== u && o.setScale("x", { min: u.scales.x.min, max: u.scales.x.max }));
+            syncing = false;
+          }],
+        },
+      };
+      plots.push(new uPlot(opts, [d.t, ...p.series.map((s) => s.y)], div));
+    });
+    document.getElementById("bar").hidden = false;
+    document.getElementById("note").textContent =
+      `run ${d.run_id} · ${d.points} of ${d.original_points} points (peaks kept) · ` +
+      `zoom: buttons, drag across a range, or pinch / Ctrl+scroll · double-click resets`;
+  }
+
+  // ── Zoom and pan controls (all panels follow, via the setScale hook) ──
+  function setRange(min, max) {
+    if (!last || !plots.length) return;
+    const t0 = last.t[0], t1 = last.t[last.t.length - 1];
+    const span = Math.min(max - min, t1 - t0);
+    min = Math.max(t0, Math.min(min, t1 - span));
+    plots[0].setScale("x", { min, max: min + span });
+  }
+  function zoom(factor, center) {
+    const { min, max } = plots[0].scales.x;
+    const c = center ?? (min + max) / 2;
+    setRange(c - (c - min) * factor, c + (max - c) * factor);
+  }
+  function pan(fraction) {
+    const { min, max } = plots[0].scales.x;
+    const shift = (max - min) * fraction;
+    setRange(min + shift, max + shift);
+  }
+  document.getElementById("zin").onclick = () => zoom(0.5);
+  document.getElementById("zout").onclick = () => zoom(2);
+  document.getElementById("left").onclick = () => pan(-0.5);
+  document.getElementById("right").onclick = () => pan(0.5);
+  document.getElementById("reset").onclick = () => last && setRange(last.t[0], last.t[last.t.length - 1]);
+
+  // Trackpad pinch (or Ctrl/⌘ + scroll) zooms around the mouse; plain scrolling still scrolls the chat.
+  document.getElementById("charts").addEventListener("wheel", (e) => {
+    if (!(e.ctrlKey || e.metaKey) || !plots.length) return;
+    e.preventDefault();
+    const u = plots.find((p) => p.over.contains(e.target)) || plots[0];
+    const rect = u.over.getBoundingClientRect();
+    zoom(e.deltaY > 0 ? 1.25 : 0.8, u.posToVal(e.clientX - rect.left, "x"));
+  }, { passive: false });
+
+  window.addEventListener("resize", () => last && draw(last));
+  app.ontoolresult = ({ structuredContent: d }) => d && d.panels && draw(d);   // set before connect()
+  await app.connect();
+</script>
+</body></html>
