@@ -104,7 +104,7 @@
       "signal": "eleDrive.pDC.pSensor.power",
       "unit": "W",
       "display_unit": "kW",
-      "meaning": "Electrical power drawn from the battery: positive = discharging, negative = regenerating. Capped at 25 kW.",
+      "meaning": "Electrical power drawn from the battery: positive = discharging, negative = regenerating. Limited to 25 kW (electrical, battery side).",
       "check": "max 25 kW = 385 V x 64.9 A"
     },
     {
@@ -156,8 +156,8 @@
       "signal": "eleDrive.powSensor.power",
       "unit": "W",
       "display_unit": "kW",
-      "meaning": "Mechanical power at the motor shaft: positive = driving, negative = regenerating.",
-      "check": "-17.8 to +22.0 kW"
+      "meaning": "Mechanical power at the motor shaft: positive = driving, negative = regenerating. Peaks at about 22 kW: the 25 kW limit applies on the electrical (battery) side, before drive losses.",
+      "check": "-17.8 to +22.0 kW (25 kW electrical minus drive losses)"
     },
     {
       "term": "battery energy used",

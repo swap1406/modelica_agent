@@ -1,0 +1,492 @@
+{
+  "version": "v0.2.0-baseline",
+  "created": "2026-11-07",
+  "ground_truth_run": "20261107-203529_MBEV",
+  "requests": [
+    {
+      "id": "DIS-01",
+      "category": "Discovery",
+      "prompt": "Which simulation models do you have?",
+      "expected": "Lists MBEV, FirstEV and HelloEV with a one-line description each.",
+      "pass_if": "All three named; MBEV described as a battery EV on NEDC.",
+      "expected_tools": [
+        "list_models"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "DIS-02",
+      "category": "Discovery",
+      "prompt": "Which model should I use to look at an electric car on the NEDC drive cycle?",
+      "expected": "MBEV.",
+      "pass_if": "Recommends MBEV and says why (battery EV, one NEDC).",
+      "expected_tools": [
+        "list_models"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "DIS-03",
+      "category": "Discovery",
+      "prompt": "Which battery-related signals can I look at in MBEV?",
+      "expected": "Recommended glossary signals: battery SOC, voltage, current, power, energy used, losses.",
+      "pass_if": "Lists at least SOC, voltage, current; uses glossary names, not internal connector signals.",
+      "expected_tools": [
+        "list_signals"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "DIS-04",
+      "category": "Discovery",
+      "prompt": "How long is a standard MBEV run, and why?",
+      "expected": "1180 s, exactly one NEDC.",
+      "pass_if": "States 1180 s and links it to one NEDC.",
+      "expected_tools": [
+        "list_models"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "DIS-05",
+      "category": "Discovery",
+      "prompt": "What versions of OpenModelica and Python is the simulation environment running?",
+      "expected": "OpenModelica 1.27.1, Python 3.10.12.",
+      "pass_if": "Both versions correct.",
+      "expected_tools": [
+        "environment_info"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "RUN-01",
+      "category": "Run",
+      "prompt": "Run the MBEV model.",
+      "expected": "New run, success, 1180 s; summary with final SOC ~67.1 %, top speed ~116.6 km/h; start-up message called harmless.",
+      "pass_if": "Run succeeds; reports run id; does not treat the structural-singular message as a problem.",
+      "expected_tools": [
+        "run_simulation"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "RUN-02",
+      "category": "Run",
+      "prompt": "Simulate FirstEV and tell me its top speed in km/h.",
+      "expected": "Runs FirstEV (200 s) and reports max speed from the summary in km/h.",
+      "pass_if": "Run succeeds; number comes from the tool result (check against run data).",
+      "expected_tools": [
+        "run_simulation"
+      ],
+      "notes": "Ground truth: check the new FirstEV run's velSens.v max x 3.6."
+    },
+    {
+      "id": "RUN-03",
+      "category": "Run",
+      "prompt": "Run HelloEV for 100 seconds and tell me its final speed in km/h.",
+      "expected": "Runs HelloEV with stop_time 100; final speed from summary (km/h).",
+      "pass_if": "stop_time=100 used; number from tool result.",
+      "expected_tools": [
+        "run_simulation"
+      ],
+      "notes": "Ground truth: check the run's v end x 3.6."
+    },
+    {
+      "id": "RUN-04",
+      "category": "Run",
+      "prompt": "Run MBEV for only the first 600 seconds.",
+      "expected": "Run with stop_time 600 (urban part only).",
+      "pass_if": "stop_time=600 used; reports run id and summary.",
+      "expected_tools": [
+        "run_simulation"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "RUN-05",
+      "category": "Run",
+      "prompt": "Run MBEV for 30,000 seconds.",
+      "expected": "Refused by guardrail (max 20,000 s); explains limit and suggests the standard run.",
+      "pass_if": "Does not run; explains the limit clearly.",
+      "expected_tools": [
+        "run_simulation"
+      ],
+      "notes": "Guardrail test."
+    },
+    {
+      "id": "VAL-01",
+      "category": "Read values",
+      "prompt": "What was the final battery SOC in the last MBEV run, in percent?",
+      "expected": "67.1 % (0.6707) for the 1180 s run.",
+      "pass_if": "Within ±0.1 %; names the run.",
+      "expected_tools": [
+        "read_results"
+      ],
+      "notes": "Ground truth from 20261107-203529_MBEV. If the latest run is the 1400 s one, 66.9 % is correct for that run."
+    },
+    {
+      "id": "VAL-02",
+      "category": "Read values",
+      "prompt": "What was the lowest SOC in the last MBEV run, and when?",
+      "expected": "66.8 % at about 1127 s.",
+      "pass_if": "Value ±0.1 % and time ±5 s.",
+      "expected_tools": [
+        "read_results"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "VAL-03",
+      "category": "Read values",
+      "prompt": "What was MBEV's top speed in km/h, and at what time?",
+      "expected": "116.6 km/h at about 1126.5 s.",
+      "pass_if": "Value ±0.5 km/h; time ±5 s.",
+      "expected_tools": [
+        "read_results"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "VAL-04",
+      "category": "Read values",
+      "prompt": "How far did the car travel in the last MBEV run?",
+      "expected": "10.74 km.",
+      "pass_if": "±0.05 km.",
+      "expected_tools": [
+        "read_results"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "VAL-05",
+      "category": "Read values",
+      "prompt": "How much battery energy did MBEV use over the cycle?",
+      "expected": "1.093 kWh (net).",
+      "pass_if": "±0.01 kWh; in kWh.",
+      "expected_tools": [
+        "read_results"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "VAL-06",
+      "category": "Read values",
+      "prompt": "What is MBEV's energy consumption in Wh/km?",
+      "expected": "101.7 Wh/km (1.093 kWh / 10.74 km).",
+      "pass_if": "±1 Wh/km; shows the calculation or both inputs.",
+      "expected_tools": [
+        "read_results"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "VAL-07",
+      "category": "Read values",
+      "prompt": "What was the maximum motor torque?",
+      "expected": "142.6 N·m driving; −150 N·m braking (limit 150 N·m).",
+      "pass_if": "Uses eleDrive.tauElectrical (not driver.accelTau / 219.9).",
+      "expected_tools": [
+        "list_signals",
+        "read_results"
+      ],
+      "notes": "Glossary trap: the torque request peaks at 219.8 N·m."
+    },
+    {
+      "id": "VAL-08",
+      "category": "Read values",
+      "prompt": "What was the peak battery current, and is that charging or discharging?",
+      "expected": "+65.0 A discharging; −40.5 A charging (regen).",
+      "pass_if": "Uses batt1.n.i with correct sign meaning.",
+      "expected_tools": [
+        "list_signals",
+        "read_results"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "VAL-09",
+      "category": "Read values",
+      "prompt": "What range did the battery voltage move within?",
+      "expected": "384.5 to 389.6 V.",
+      "pass_if": "±0.5 V.",
+      "expected_tools": [
+        "read_results"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "VAL-10",
+      "category": "Read values",
+      "prompt": "What was the maximum motor speed in rpm?",
+      "expected": "About 3,247 rpm.",
+      "pass_if": "±20 rpm; in rpm.",
+      "expected_tools": [
+        "read_results"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "VAL-11",
+      "category": "Read values",
+      "prompt": "What was the SOC at 600 seconds?",
+      "expected": "69.4 % (0.6938).",
+      "pass_if": "±0.1 %.",
+      "expected_tools": [
+        "read_results"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "RSN-01",
+      "category": "Reasoning",
+      "prompt": "Compare energy consumption in the urban and extra-urban parts of the NEDC.",
+      "expected": "Urban (0–780 s): 0.303 kWh / 3.95 km ≈ 77 Wh/km; extra-urban: 0.790 kWh / 6.80 km ≈ 116 Wh/km.",
+      "pass_if": "Both values within ±5 %; uses value at ~780 s (at_time) rather than guessing.",
+      "expected_tools": [
+        "read_results"
+      ],
+      "notes": "Needs read_results with at_time=780 or similar."
+    },
+    {
+      "id": "RSN-02",
+      "category": "Reasoning",
+      "prompt": "Why doesn't the car reach the 120 km/h the cycle asks for?",
+      "expected": "Power-limited: battery/drive power capped at 25 kW; actual max 116.6 km/h vs target 120; biggest gap ~7.9 km/h at ~1116 s.",
+      "pass_if": "Identifies the power limit with evidence (25 kW reached), not a guess.",
+      "expected_tools": [
+        "read_results",
+        "list_signals"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "RSN-03",
+      "category": "Reasoning",
+      "prompt": "Was the motor ever torque-limited? When?",
+      "expected": "Yes: hits the −150 N·m limit while braking; driving torque peaks 142.6 N·m (requests up to 219.8 N·m are cut).",
+      "pass_if": "Compares request vs actual torque or limit; no invented times.",
+      "expected_tools": [
+        "read_results"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "RSN-04",
+      "category": "Reasoning",
+      "prompt": "How much energy was lost inside the battery, as a share of the energy used?",
+      "expected": "0.0445 kWh ≈ 4 % of 1.093 kWh.",
+      "pass_if": "Value ±0.005 kWh and share ±1 %.",
+      "expected_tools": [
+        "read_results"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "RSN-05",
+      "category": "Reasoning",
+      "prompt": "Based on this run, roughly what is the battery capacity?",
+      "expected": "≈ 37 kWh: 1.093 kWh used for a 2.93 % SOC drop (assumes SOC linear in energy; model facts suggest ~38.7 kWh).",
+      "pass_if": "Shows the method and states the assumption; 35–40 kWh accepted.",
+      "expected_tools": [
+        "read_results"
+      ],
+      "notes": "Tests stated assumptions."
+    },
+    {
+      "id": "PLT-01",
+      "category": "Plot",
+      "prompt": "Plot actual speed and target speed for the last MBEV run.",
+      "expected": "Chart with velSens.v and driver.from_kmh.y in one panel.",
+      "pass_if": "Both correct signals; chart shown.",
+      "expected_tools": [
+        "list_signals",
+        "plot_signals"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "PLT-02",
+      "category": "Plot",
+      "prompt": "Plot SOC for the last MBEV run.",
+      "expected": "Chart of batt1.SOC.",
+      "pass_if": "Correct signal; chart shown.",
+      "expected_tools": [
+        "plot_signals"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "PLT-03",
+      "category": "Plot",
+      "prompt": "Plot motor torque and battery current.",
+      "expected": "eleDrive.tauElectrical and batt1.n.i, two panels.",
+      "pass_if": "Actual torque (not request) and batt1.n.i.",
+      "expected_tools": [
+        "list_signals",
+        "plot_signals"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "PLT-04",
+      "category": "Plot",
+      "prompt": "Plot battery power together with SOC.",
+      "expected": "eleDrive.pDC.pSensor.power and batt1.SOC.",
+      "pass_if": "Correct signals; chart shown.",
+      "expected_tools": [
+        "list_signals",
+        "plot_signals"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "PLT-05",
+      "category": "Plot",
+      "prompt": "Plot speed, SOC, battery current, voltage, power, motor torque, motor speed, motor power and distance all in one chart.",
+      "expected": "9 signals > 8 limit: tool error; assistant splits into two charts or explains.",
+      "pass_if": "Handles the limit gracefully (splits or explains); no crash or silent drop.",
+      "expected_tools": [
+        "plot_signals"
+      ],
+      "notes": "Limit test."
+    },
+    {
+      "id": "CMP-01",
+      "category": "Compare",
+      "prompt": "Compare the final SOC of runs 20261107-203529_MBEV and 20261107-105840_MBEV.",
+      "expected": "67.07 % (1180 s run) vs 66.85 % (1400 s run); the longer run continues into a second cycle.",
+      "pass_if": "Both values ±0.1 % and explains the difference (run length).",
+      "expected_tools": [
+        "read_results",
+        "list_runs"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "CMP-02",
+      "category": "Compare",
+      "prompt": "How much further did the car travel in the 1400 s MBEV run than in the 1180 s one?",
+      "expected": "11.76 − 10.74 ≈ 1.01 km further.",
+      "pass_if": "±0.05 km.",
+      "expected_tools": [
+        "list_runs",
+        "read_results"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "CMP-03",
+      "category": "Compare",
+      "prompt": "Did the energy consumption in Wh/km differ between the last two MBEV runs?",
+      "expected": "If both are 1180 s runs: identical (≈101.7 Wh/km). If one is 1400 s: 101.7 vs 99.8 Wh/km.",
+      "pass_if": "Identifies which runs it compared; numbers match those runs; no invented difference.",
+      "expected_tools": [
+        "list_runs",
+        "read_results"
+      ],
+      "notes": "Depends on run history at test time."
+    },
+    {
+      "id": "ERR-01",
+      "category": "Errors",
+      "prompt": "Run the Tesla model.",
+      "expected": "Not available; lists available models.",
+      "pass_if": "Doesn't invent a model; lists MBEV, FirstEV, HelloEV.",
+      "expected_tools": [
+        "run_simulation",
+        "list_models"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "ERR-02",
+      "category": "Errors",
+      "prompt": "Plot batt1.soc for the last MBEV run.",
+      "expected": "Recovers from the wrong capitalisation using the suggestion (batt1.SOC) and plots it.",
+      "pass_if": "Correct signal plotted, or asks to confirm the suggestion.",
+      "expected_tools": [
+        "plot_signals"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "ERR-03",
+      "category": "Errors",
+      "prompt": "Plot the motor temperature for the last MBEV run.",
+      "expected": "No such signal in MBEV (no thermal model); says so, does not plot something else as 'temperature'.",
+      "pass_if": "States it's not available; no invented signal.",
+      "expected_tools": [
+        "list_signals"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "ERR-04",
+      "category": "Errors",
+      "prompt": "What was the SOC at 2000 seconds in the last MBEV run?",
+      "expected": "Run ends at 1180 s; explains that, offers the final value or a longer run.",
+      "pass_if": "Doesn't invent a value.",
+      "expected_tools": [
+        "read_results"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "ERR-05",
+      "category": "Errors",
+      "prompt": "What was the battery SOC at the end of the FirstEV run?",
+      "expected": "FirstEV has no battery model; says so.",
+      "pass_if": "No invented SOC.",
+      "expected_tools": [
+        "list_models",
+        "list_signals"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "AMB-01",
+      "category": "Ambiguous",
+      "prompt": "Is this car efficient?",
+      "expected": "Gives evidence (≈102 Wh/km on NEDC, context) and states it's a simple model; avoids an unsupported verdict.",
+      "pass_if": "Uses real numbers and states limits/assumptions.",
+      "expected_tools": [
+        "read_results"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "AMB-02",
+      "category": "Ambiguous",
+      "prompt": "Plot the torque for the last MBEV run.",
+      "expected": "Ambiguous (actual vs requested): asks, or plots actual motor torque and says so.",
+      "pass_if": "Doesn't silently plot only the request.",
+      "expected_tools": [
+        "list_signals",
+        "plot_signals"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "AMB-03",
+      "category": "Ambiguous",
+      "prompt": "What's the range of this car?",
+      "expected": "Needs assumptions: from ~37 kWh capacity and ~102 Wh/km → roughly 360 km from full on NEDC (or from 70 %: ~250 km); states assumptions clearly.",
+      "pass_if": "Shows method and assumptions; no unexplained number.",
+      "expected_tools": [
+        "read_results"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "AMB-04",
+      "category": "Ambiguous",
+      "prompt": "Change the gear ratio to 9 and run MBEV again.",
+      "expected": "Not supported yet (no parameter changes); explains and suggests what it can do.",
+      "pass_if": "Doesn't claim to have changed the gear ratio.",
+      "expected_tools": [
+        "run_simulation"
+      ],
+      "notes": "Parameter overrides are planned for later."
+    }
+  ]
+}
