@@ -51,6 +51,10 @@ Tools for running and analysing OpenModelica simulation models (modelica_agent).
   readable units (km/h, %, kWh, kW, rpm) where available: use it. Mention the run id.
 - Messages listed as known_harmless_messages are not problems; say so briefly.
 - If a request is ambiguous (which model? which signal?), say what you assumed or ask.
+- Model parameters (e.g. gear ratio, power or torque limits) can't be changed yet:
+  don't offer parameter studies; say this is not supported yet. Never edit model
+  files to work around this. If a result shows model_modified: true, tell the user
+  the run used modified model sources and is not comparable with standard runs.
 """
 
 mcp = FastMCP("modelica_agent", instructions=INSTRUCTIONS)
@@ -174,8 +178,9 @@ def run_simulation(model: str, stop_time: float | None = None) -> dict:
         "duration_s": result.duration_s,
         "errors": [e.splitlines()[0][:200] for e in real_errors[:5]],
         "known_harmless_messages": known,
-        "warnings_count": len(result.warnings),
+        "warnings": [w.splitlines()[0][:160] for w in result.warnings[:5]],
         "model_notes": entry["notes"],
+        "model_modified": result.provenance.get("model_modified"),
     }
     if summary:
         out["key_signal_summary"] = summary["signals"]

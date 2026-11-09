@@ -13,9 +13,10 @@ MODELS = {
         "model": "EHPTexamples.EV.MBEV",
         "description": (
             "Simple map-based battery electric vehicle (open-source EHPT library, "
-            "Prof. M. Ceraolo): 1300 kg, single fixed gear, 150 N.m / 25 kW electric "
-            "drive, battery starting at 70 % SOC. Drives the NEDC; a standard run is "
-            "exactly one NEDC (1180 s). Runs longer than 1180 s repeat the cycle."
+            "Prof. M. Ceraolo): 1300 kg, single fixed gear, electric drive limited to "
+            "150 N.m and 25 kW electrical power drawn from the battery (about 22 kW at "
+            "the motor shaft after losses), battery starting at 70 % SOC. Drives the NEDC; "
+            "a standard run is exactly one NEDC (1180 s). Runs longer than 1180 s repeat the cycle."
         ),
         "drive_cycle": "NEDC (one cycle = 1180 s; repeats if run longer)",
         "default_stop_time_s": 1180,

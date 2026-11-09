@@ -25,6 +25,7 @@ from pathlib import Path
 
 from simcore import config
 from simcore.environment import environment_info
+from simcore.provenance import check as check_provenance
 
 
 @dataclass
@@ -45,6 +46,7 @@ class RunResult:
     duration_s: float = 0.0          # wall-clock time for the whole run
     started_at: str = ""
     environment: dict = field(default_factory=dict)
+    provenance: dict = field(default_factory=dict)   # were the model sources the approved ones?
 
     def summary(self) -> str:
         """A short human-readable summary, e.g. for printing in Terminal."""
@@ -146,6 +148,7 @@ def run_simulation(model: str, stop_time: float | None = None, simflags: str | N
     timeout_s  give up after this many seconds
     """
     started = time.time()
+    provenance = check_provenance()          # fingerprint the model sources before running
     run_id, run_dir = _new_run_dir(model)
     build_dir = run_dir / "build"
     build_dir.mkdir()
@@ -208,7 +211,13 @@ def run_simulation(model: str, stop_time: float | None = None, simflags: str | N
         duration_s=round(time.time() - started, 2),
         started_at=datetime.fromtimestamp(started).isoformat(timespec="seconds"),
         environment=environment_info(),
+        provenance=provenance,
     )
+    if provenance.get("model_modified"):
+        result.warnings.insert(0, "Model source files differ from the approved versions "
+                               "(models/source_manifest.json): " + ", ".join(
+                                   provenance.get("changed", []) + provenance.get("added", []) +
+                                   provenance.get("missing", [])) + ". Results may not be comparable.")
 
     # 6. Save the run record next to the results
     (run_dir / "run.json").write_text(json.dumps(asdict(result), indent=2))

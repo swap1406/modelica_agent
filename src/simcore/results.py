@@ -166,6 +166,12 @@ def list_runs(model: str | None = None, limit: int = 10) -> list[dict]:
             continue
         if model and model not in (record["model"], record["model"].split(".")[-1]):
             continue
+        errors, known = record.get("errors", []), []
+        try:                                   # same labelling as run_simulation
+            from simcore import catalog
+            errors, known = catalog.classify_messages(catalog.get_model(record["model"]), errors)
+        except KeyError:
+            pass                               # model not in the catalogue: count everything
         runs.append({
             "run_id": record["run_id"],
             "model": record["model"].split(".")[-1],
@@ -173,7 +179,9 @@ def list_runs(model: str | None = None, limit: int = 10) -> list[dict]:
             "started_at": record.get("started_at", ""),
             "duration_s": record.get("duration_s"),
             "stop_time_s": record.get("stop_time"),
-            "errors": len(record.get("errors", [])),
+            "errors": len(errors),
+            "known_harmless_messages": len(known),
+            "model_modified": record.get("provenance", {}).get("model_modified"),
         })
         if len(runs) >= limit:
             break
@@ -211,6 +219,9 @@ def summarize_signals(run="latest", signals: list[str] | None = None,
         "time_range_s": [_num(t0), _num(t1)],
         "signals": [],
     }
+    if record.get("provenance", {}).get("model_modified"):
+        out["warning"] = ("This run was made from MODIFIED model source files, not the approved ones: "
+                          "its results are not comparable with standard runs.")
     for name in signals:
         y = data[name]
         description, unit, _ = info.get(name, ("", "", ""))
