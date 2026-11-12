@@ -33,3 +33,6 @@ results/
 
 # ── OpenModelica library cache (downloaded on first run) ──
 .om-home/
+
+# Raw screen recordings (large); only the edited GIF is committed
+docs/raw/

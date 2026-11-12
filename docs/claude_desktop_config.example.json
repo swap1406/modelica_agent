@@ -1,0 +1,22 @@
+{
+  "mcpServers": {
+    "modelica_agent": {
+      "command": "/usr/local/bin/docker",
+      "args": [
+        "compose",
+        "-f",
+        "/ABSOLUTE/PATH/TO/modelica_agent/docker-compose.yml",
+        "run",
+        "--rm",
+        "-T",
+        "om",
+        "python3",
+        "-m",
+        "simcore.mcp_server"
+      ],
+      "env": {
+        "PATH": "/usr/local/bin:/Applications/Docker.app/Contents/Resources/bin:/usr/bin:/bin"
+      }
+    }
+  }
+}
